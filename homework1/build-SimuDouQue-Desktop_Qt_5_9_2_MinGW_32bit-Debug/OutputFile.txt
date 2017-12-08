@@ -1,0 +1,9 @@
+Double-server queueing system
+Mean interarrival Queue1 time       2.100 minutes
+
+Mean interarrival Queue2 time       1.100 minutes
+
+Mean server Queue1 time            2.000 minutes
+
+Mean server Queue2 time            0.900 minutes
+
