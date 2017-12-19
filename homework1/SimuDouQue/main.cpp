@@ -108,11 +108,9 @@ int main(int argc, char *argv[])
             case -1:
                 break;
             case 1:
-                qDebug()<<"I will go into que1";
                 arrive_que1();
                 break;
             case 2:
-                qDebug()<<"I will go out que1";
                 depart_que1();
                 break;
             case 3:
@@ -124,11 +122,9 @@ int main(int argc, char *argv[])
             case -1:
                 break;
             case 1:
-                qDebug()<<"I will go into que2";
                 arrive_que2();
                 break;
             case 2:
-                qDebug()<<"I will go out que2";
                 depart_que2();
                 break;
             case 3:
@@ -139,6 +135,8 @@ int main(int argc, char *argv[])
     }
 
 there:    report();
+
+    qDebug()<<"Find result in File";
 
     fclose(outfile);
     return a.exec();
@@ -293,7 +291,6 @@ void arrive_que1()
 
         time_arrival_que1[num_in_q1] = Simulation_time;
 
-        qDebug()<<"++++++++++++++num_in_q1 = " + QString::number(num_in_q1) + " Time arrival queue1 = " + QString::number(time_arrival_que1[num_in_q1]);
 
     } else {
         /**
@@ -307,7 +304,6 @@ void arrive_que1()
 
         time_que1_next_event[2] = Simulation_time + Myexpon(mean_server1);
 
-        qDebug()<<"~~~~~time_que1_next_event[2] = " + QString::number(time_que1_next_event[2]);
     }
 }
 
@@ -331,8 +327,6 @@ void arrive_que2()
 
         time_arrival_que2[num_in_q2] = Simulation_time;
 
-
-        qDebug()<<"++++++++++++++num_in_q2 = " + QString::number(num_in_q2) + " Time arrival queue2 = " + QString::number(time_arrival_que2[num_in_q2]);
     } else {
 
         delay = 0.0;
@@ -343,7 +337,6 @@ void arrive_que2()
 
         time_que2_next_event[2] = Simulation_time + Myexpon(mean_server2);
 
-        qDebug()<<"~~~~~time_que2_next_event[2] = " + QString::number(time_que2_next_event[2]);
     }
 }
 
@@ -364,7 +357,6 @@ void depart_que1()
         delay = Simulation_time - time_arrival_que1[1];
         total_of_delays1 += delay;
 
-        qDebug()<<"total_of_delays1 = " + QString::number(total_of_delays1);
 
         num_que1_delayed++;
         time_que1_next_event[2] = Simulation_time + Myexpon(mean_server1);
@@ -392,8 +384,6 @@ void depart_que2()
         --num_in_q2;
         delay = Simulation_time - time_arrival_que2[1];
         total_of_delays2 += delay;
-
-        qDebug()<<"total_of_delays2 = " + QString::number(total_of_delays2);
 
         num_que2_delayed++;
         time_que2_next_event[2] = Simulation_time + Myexpon(mean_server2);
