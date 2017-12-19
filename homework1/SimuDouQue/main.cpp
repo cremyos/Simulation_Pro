@@ -13,6 +13,7 @@
 #include <iostream>
 #include <math.h>
 #include "lcgrand.h"
+#include <QDebug>
 
 using namespace std;
 
@@ -21,14 +22,14 @@ using namespace std;
 #define MAXLIMIT 10000      /// 虽然题目没有规定队列长度限制，但是给了一个系统的上限
 
 void initialize();              /// 初始化函数
-void timing_Que1();                 /// 队列1时间函数
-void timing_Que2();                 /// 队列2时间函数
+void timing_Que();                 /// 队列1时间函数
 void arrive_que1();                  /// 到达队列1
 void arrive_que2();                  /// 到达队列2
 void depart_que1();                  /// 离开队列1
 void depart_que2();                  /// 离开队列2
 void report();                  /// 报告函数
 float Myexpon(float mean);        /// 指数分布函数
+void update_time_avg_stats(int que1, int que2);       /// 更新时间
 
 FILE *outfile;                  /// 报告文件
 
@@ -92,13 +93,54 @@ int main(int argc, char *argv[])
          * Determine the next event.
          **/
 //        timing();
+        timing_Que();
+        if((-1 == next_event_type_que2) && (-1 != next_event_type_que1)) {
+            update_time_avg_stats(1, 0);
+        }
 
+
+        if((-1 == next_event_type_que1) && (-1 != next_event_type_que2)) {
+            update_time_avg_stats(0, 1);
+        }
+
+
+        switch(next_event_type_que1) {
+            case -1:
+                break;
+            case 1:
+                qDebug()<<"I will go into que1";
+                arrive_que1();
+                break;
+            case 2:
+                qDebug()<<"I will go out que1";
+                depart_que1();
+                break;
+            case 3:
+                goto there;
+                break;
+        }
+
+        switch(next_event_type_que2) {
+            case -1:
+                break;
+            case 1:
+                qDebug()<<"I will go into que2";
+                arrive_que2();
+                break;
+            case 2:
+                qDebug()<<"I will go out que2";
+                depart_que2();
+                break;
+            case 3:
+                goto there;
+                break;
+        }
 
     }
 
+there:    report();
 
     fclose(outfile);
-
     return a.exec();
 }
 
@@ -155,7 +197,7 @@ void initialize()
     time_que1_next_event[2] = 1.0e+30;
     time_que1_next_event[3] = Simulation_time_Count;
 
-    time_que2_next_event[1] = Simulation_time + Myexpon(mean_interarrival1);
+    time_que2_next_event[1] = Simulation_time + Myexpon(mean_interarrival2);
     time_que2_next_event[2] = 1.0e+30;
     time_que2_next_event[3] = Simulation_time_Count;
 
@@ -165,59 +207,66 @@ void initialize()
  * @brief timing
  * 队列1时间函数，下一事件表
  */
-void timing_Que1()
+void timing_Que()
 {
     int i = 0;
     float min_time_next_event = 1.0e+29;
+    float Temp_time_next_event = 1.0e+29;
+    float Temp_time_next_eventQue = -1;            /// 下一事件是哪个队列的，临时存储
+    float Temp_time_next_eventType = 0;            /// 下一事件是什么事件
 
     next_event_type_que1 = 0;
-    /**
-     * 决定下一事件类型
-     **/
-    for(i = 1; i <= num_event; i++) {
-        if(time_que1_next_event[i] < min_time_next_event) {
-            min_time_next_event = time_que1_next_event[i];
-            next_event_type_que1 = i;
-        }
-
-        if(0 == next_event_type_que1) {
-            /**
-             * 事件列表为空，停止仿真
-             **/
-            fprintf(outfile, "\nEvent list empty at time %f", Simulation_time);
-            exit(1);
-        }
-    }
-
-    Simulation_time = min_time_next_event;
-}
-
-/**
- * @brief timing
- * 队列2时间函数，下一事件表
- */
-void timing_Que2()
-{
-    int i = 0;
-    float min_time_next_event = 1.0e+29;
-
     next_event_type_que2 = 0;
     /**
      * 决定下一事件类型
      **/
     for(i = 1; i <= num_event; i++) {
-        if(time_que2_next_event[i] < min_time_next_event) {
-            min_time_next_event = time_que2_next_event[i];
-            next_event_type_que2 = i;
+        if((time_que1_next_event[i] < min_time_next_event) && (time_que1_next_event[i] < Temp_time_next_event)) {
+            Temp_time_next_event = time_que1_next_event[i];
+            Temp_time_next_eventQue = 1;
+            Temp_time_next_eventType = i;
+        } else {
+            /**
+             * 否则下一事件为-1，表示队列1不是下一事件
+             **/
+            next_event_type_que1 = -1;
         }
 
-        if(0 == next_event_type_que2) {
+        if((time_que2_next_event[i] < min_time_next_event) && (time_que2_next_event[i] < Temp_time_next_event)) {
+            Temp_time_next_event = time_que2_next_event[i];
+            Temp_time_next_eventQue = 2;
+            Temp_time_next_eventType = i;
+        } else {
+            next_event_type_que2 = -1;
+        }
+
+        if(min_time_next_event >= Temp_time_next_event) {
+            min_time_next_event = Temp_time_next_event;
+            if(1 == Temp_time_next_eventQue) {
+                /**
+                 * 队列1
+                 **/
+                next_event_type_que1 = Temp_time_next_eventType;
+            } else  if(2 == Temp_time_next_eventQue){
+                /**
+                 * 队列2
+                 **/
+                next_event_type_que2 = Temp_time_next_eventType;
+            }
+
+        }
+
+
+
+        if((0 == next_event_type_que1) && (0 == next_event_type_que2)) {
             /**
              * 事件列表为空，停止仿真
              **/
-            fprintf(outfile, "\nEvent list empty at time %f", Simulation_time);
+            fprintf(outfile, "\nBoth event list empty at time %f", Simulation_time);
             exit(1);
         }
+
+
     }
 
     Simulation_time = min_time_next_event;
@@ -241,8 +290,12 @@ void arrive_que1()
 
         ++num_in_q1;                        /// 入队列
 
+
         time_arrival_que1[num_in_q1] = Simulation_time;
-    } else{
+
+        qDebug()<<"++++++++++++++num_in_q1 = " + QString::number(num_in_q1) + " Time arrival queue1 = " + QString::number(time_arrival_que1[num_in_q1]);
+
+    } else {
         /**
          * 队列1的服务员都空闲的时候，顾客到达延迟为0
          **/
@@ -253,6 +306,8 @@ void arrive_que1()
         server1_status = BUSY;
 
         time_que1_next_event[2] = Simulation_time + Myexpon(mean_server1);
+
+        qDebug()<<"~~~~~time_que1_next_event[2] = " + QString::number(time_que1_next_event[2]);
     }
 }
 
@@ -264,28 +319,31 @@ void arrive_que2()
 {
     float delay;
 
-    time_que2_next_event[1] = Simulation_time + Myexpon(mean_interarrival1);
+    time_que2_next_event[1] = Simulation_time + Myexpon(mean_interarrival2);
 
-    if((server1_status == BUSY) && (server2_status == BUSY)) {
+    if((server2_status == BUSY) && (server1_status == BUSY)) {
         /**
          * 判断两个队列的服务员是否都处于忙的状态
          **/
 
-        ++num_in_q1;                        /// 入队列
+        ++num_in_q2;                        /// 入队列
 
-        time_arrival_que2[num_in_q1] = Simulation_time;
+
+        time_arrival_que2[num_in_q2] = Simulation_time;
+
+
+        qDebug()<<"++++++++++++++num_in_q2 = " + QString::number(num_in_q2) + " Time arrival queue2 = " + QString::number(time_arrival_que2[num_in_q2]);
     } else {
-        /**
-         * 队列2的服务员都空闲的时候，顾客到达延迟为0
-         * 但是队列1的顾客可以让队列2的服务员服务
-         **/
+
         delay = 0.0;
         total_of_delays2 += delay;
 
         ++num_que2_delayed;
         server2_status = BUSY;
 
-        time_que2_next_event[2] = Simulation_time + Myexpon(mean_server1);
+        time_que2_next_event[2] = Simulation_time + Myexpon(mean_server2);
+
+        qDebug()<<"~~~~~time_que2_next_event[2] = " + QString::number(time_que2_next_event[2]);
     }
 }
 
@@ -296,15 +354,17 @@ void arrive_que2()
 void depart_que1()
 {
     int i;
-    float delay;
+    float delay = 0;
 
     if(num_in_q1 == 0){
-        server1_status == IDLE;
+        server1_status = IDLE;
         time_que1_next_event[2] = 1.0e+30;
     } else{
-        num_in_q1--;
+        --num_in_q1;
         delay = Simulation_time - time_arrival_que1[1];
         total_of_delays1 += delay;
+
+        qDebug()<<"total_of_delays1 = " + QString::number(total_of_delays1);
 
         num_que1_delayed++;
         time_que1_next_event[2] = Simulation_time + Myexpon(mean_server1);
@@ -323,18 +383,20 @@ void depart_que1()
 void depart_que2()
 {
     int i;
-    float delay;
+    float delay = 0;
 
     if(num_in_q2 == 0){
-        server2_status == IDLE;
+        server2_status = IDLE;
         time_que2_next_event[2] = 1.0e+30;
     } else{
-        num_in_q2--;
+        --num_in_q2;
         delay = Simulation_time - time_arrival_que2[1];
         total_of_delays2 += delay;
 
+        qDebug()<<"total_of_delays2 = " + QString::number(total_of_delays2);
+
         num_que2_delayed++;
-        time_que2_next_event[2] = Simulation_time + Myexpon(mean_server1);
+        time_que2_next_event[2] = Simulation_time + Myexpon(mean_server2);
 
         for(i = 1; i <= num_in_q2; i++) {
             time_arrival_que2[i] = time_arrival_que2[i+1];
@@ -354,9 +416,35 @@ void report()
     fprintf(outfile, "\n\nServer utilization in Queue1 %15.3f\n\n", area_server1_status/Simulation_time);
 
     fprintf(outfile, "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+
     fprintf(outfile, "\n\nAverage delay in Queue2 %11.3f minutes\n\n", total_of_delays2/num_que2_delayed);
     fprintf(outfile, "\n\nAverage number in Queue2 %10.3f\n\n", area_num_in_q2/Simulation_time);
     fprintf(outfile, "\n\nServer utilization in Queue2 %15.3f\n\n", area_server2_status/Simulation_time);
+
+    fprintf(outfile, "\n\nTimeSimulation ended%12.3f\n\n", Simulation_time);
+
+}
+
+/**
+ * @brief update_time_avg_stats
+ * 更新时间用于计算平均时间
+ */
+void update_time_avg_stats(int que1, int que2)
+{
+    float time_since_last_event1 = 0;
+    float time_since_last_event2 = 0;
+
+    if((1 == que1) && (0 == que2)) {
+        time_since_last_event1 = Simulation_time - time_last_event1;
+        time_last_event1 = Simulation_time;
+        area_num_in_q1 += num_in_q1 * time_since_last_event1;
+        area_server1_status += server1_status * time_since_last_event1;
+    } else  if((0 == que1) && (1 == que2)) {
+        time_since_last_event2 = Simulation_time - time_last_event2;
+        time_last_event2 = Simulation_time;
+        area_num_in_q2 += num_in_q2 * time_since_last_event2;
+        area_server2_status += server2_status * time_since_last_event2;
+    }
 
 }
 

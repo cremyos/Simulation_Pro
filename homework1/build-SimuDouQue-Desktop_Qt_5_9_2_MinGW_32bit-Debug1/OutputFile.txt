@@ -1,0 +1,39 @@
+Double-server queueing system
+Mean interarrival Queue1 time       2.100 minutes
+
+Mean server Queue1 time            2.000 minutes
+
+Mean interarrival Queue2 time       1.100 minutes
+
+Mean server Queue2 time            0.900 minutes
+
+
+
+Average delay in Queue1       1.896 minutes
+
+
+
+Average number in Queue1      0.917
+
+
+
+Server utilization in Queue1           0.716
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+Average delay in Queue2       1.335 minutes
+
+
+
+Average number in Queue2      1.208
+
+
+
+Server utilization in Queue2           0.669
+
+
+
+TimeSimulation ended     480.000
+
